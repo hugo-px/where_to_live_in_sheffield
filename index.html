@@ -960,7 +960,9 @@ function getTooltipContent(key){
 }
 
 // ── Map ───────────────────────────────────────────────────────────────────────
-const map=L.map('map',{center:[53.383,-1.476],zoom:11,zoomControl:true})
+const map=L.map('map',{center:[53.383,-1.476],zoom:11,zoomControl:true});
+setTimeout(()=>map.invalidateSize(),300);
+window.addEventListener('resize',()=>map.invalidateSize());
   .addLayer(L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',maxZoom:18}));
 
 document.getElementById('abs-toggle').addEventListener('change',()=>{refreshMap();if(lockedKey)renderSidebar(lockedKey);rebuildChartIfOpen();updateLegend();});

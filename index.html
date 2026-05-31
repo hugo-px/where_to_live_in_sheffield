@@ -61,6 +61,8 @@
     .area-rate{font-size:2rem;font-weight:500;letter-spacing:-0.03em;line-height:1;margin-bottom:3px}
     .area-rate-label{font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:18px}
     .chart-title{font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:9px}
+    .bar-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:4px}
+    .bar-fill{height:100%;border-radius:4px;transition:width 0.3s ease}
     .crime-bar{margin-bottom:9px}
     .crime-bar-header{display:flex;justify-content:space-between;align-items:baseline;font-size:0.63rem;margin-bottom:3px}
     .crime-bar-label{display:flex;align-items:center;gap:6px;color:var(--text);flex:1;min-width:0}
@@ -135,7 +137,14 @@
     .finder-no-results{font-size:0.65rem;color:var(--muted);font-style:italic;padding:8px 0}
 
     /* ── Mobile layout (≤768px) ──────────────────────────────────────────── */
+    /* Mobile-only elements — hidden by default on desktop */
+    .mob-overlay, .mob-menu-wrap, #mob-debug { display: none !important; }
+
     @media (max-width: 768px) {
+      .mob-overlay { display: none; }  /* overrides desktop !important */
+      .mob-overlay.mob-active { display: flex !important; }
+      .mob-menu-wrap { display: flex !important; }
+      #mob-debug { display: block !important; }
       /* Hide desktop chrome */
       header { display: none !important; }
       .chart-toggle-btn { display: none !important; }
@@ -239,47 +248,69 @@
         letter-spacing: 0.05em;
       }
 
-      /* ── Bottom navigation bar ───────────────────────────────────────── */
-      .mob-nav {
+      /* ── Floating hamburger menu ─────────────────────────────────────── */
+      .mob-menu-wrap {
         position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 100;
-        background: var(--bg);
-        border-top: 1px solid var(--border);
+        bottom: 24px;
+        left: 16px;
+        z-index: 300;
         display: flex;
-        align-items: stretch;
-        height: 64px;
-        padding-bottom: env(safe-area-inset-bottom);
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        gap: 8px;
       }
-      .mob-nav-btn {
-        flex: 1;
+      .mob-menu-toggle {
+        background: var(--accent);
+        color: #1a1000;
+        border: none;
+        border-radius: 20px;
+        padding: 10px 18px;
+        font-family: 'DM Mono', monospace;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        letter-spacing: 0.04em;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 0.15s;
+        box-shadow: 0 2px 12px #00000060;
+      }
+      .mob-menu-toggle:active { opacity: 0.85; }
+      .mob-menu-items {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: none;
-        border: none;
-        color: var(--muted);
-        font-family: 'DM Mono', monospace;
-        font-size: 1.3rem;
-        cursor: pointer;
-        transition: color 0.15s, background 0.15s;
-        gap: 2px;
-        padding: 0;
-        border-right: 1px solid var(--border);
-        -webkit-tap-highlight-color: transparent;
+        gap: 6px;
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition: max-height 0.25s ease, opacity 0.2s ease;
+        pointer-events: none;
       }
-      .mob-nav-btn:last-child { border-right: none; }
-      .mob-nav-btn:active { background: var(--border); }
-      .mob-nav-btn.mob-active { color: var(--accent); }
-      .mob-nav-btn.mob-disabled { opacity: 0.3; }
+      .mob-menu-items.mob-menu-open {
+        max-height: 200px;
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .mob-menu-item {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 10px 18px;
+        font-family: 'DM Mono', monospace;
+        font-size: 0.72rem;
+        cursor: pointer;
+        text-align: left;
+        white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 2px 8px #00000050;
+        transition: background 0.12s, color 0.12s;
+      }
+      .mob-menu-item:active { background: var(--border); color: var(--accent); }
 
-      /* Leaflet zoom controls — push above nav bar */
+      /* Leaflet zoom controls */
       .leaflet-top.leaflet-left { top: 12px !important; }
       .leaflet-control-zoom { margin-left: 12px !important; }
-      .leaflet-control-attribution { margin-bottom: 70px !important; }
+      .leaflet-control-attribution { margin-bottom: 16px !important; }
 
       /* Finder inside overlay — remove panel-specific styles */
       .mob-overlay .finder-body {
@@ -327,6 +358,78 @@
         padding: 0;
         overflow: visible;
       }
+    }
+
+    /* ── Area Summary ──────────────────────────────────────────────────── */
+    .summary-panel {
+      width: 340px;
+      min-width: 300px;
+      flex-shrink: 0;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    .summary-panel.hidden { display: none; }
+    .summary-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .summary-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+    .summary-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0;
+    }
+    .summary-close:hover { color: var(--text); }
+    .summary-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px 20px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .summary-topic {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .summary-topic:last-child { border-bottom: none; margin-bottom: 0; }
+    .summary-topic-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .summary-topic-name {
+      font-size: 0.58rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .summary-topic-val {
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+    .summary-topic-sub {
+      font-size: 0.58rem;
+      color: var(--muted);
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -483,6 +586,16 @@
     <div id="map"></div>
     <button class="chart-toggle-btn" id="chart-toggle">Aggregated stats</button>
   </div>
+  <aside class="summary-panel hidden" id="summary-panel">
+    <div class="summary-header">
+      <div>
+        <div style="font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px">Area Summary</div>
+        <span class="summary-title" id="summary-title">—</span>
+      </div>
+      <button class="summary-close" onclick="closeSummary()">✕</button>
+    </div>
+    <div class="summary-body" id="summary-body"></div>
+  </aside>
   <aside class="sidebar">
     <div class="sidebar-inner" id="sidebar-content">
       <div class="placeholder-text">
@@ -892,6 +1005,14 @@ function renderSidebar(key){
   else if(isSchools()) renderSchoolsSidebar(key);
   else if(isResidents()) renderResidentsSidebar(key);
   else                 renderEstateSidebar(key);
+  // Append "See all topics" link
+  const sc = document.getElementById('sidebar-content');
+  if (sc && key) {
+    const link = document.createElement('div');
+    link.style.cssText = 'margin-top:16px;padding-top:12px;border-top:1px solid var(--border)';
+    link.innerHTML = `<button onclick="openSummary('${key}')" style="background:none;border:1px solid var(--border);color:var(--accent);font-family:'DM Mono',monospace;font-size:0.62rem;padding:7px 14px;border-radius:20px;cursor:pointer;width:100%;transition:background 0.15s" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">See all topics for this area →</button>`;
+    sc.appendChild(link);
+  }
   // Mobile: mirror content to info overlay and auto-open it
   if(typeof isMobile==='function' && isMobile() && key){
     const d=DATA()[key];
@@ -901,9 +1022,7 @@ function renderSidebar(key){
     const sidebarInner=document.querySelector('.sidebar-inner');
     const body=document.getElementById('mob-info-body');
     if(sidebarInner&&body) body.innerHTML=sidebarInner.innerHTML;
-    const infoBtn=document.getElementById('mob-btn-info');
-    if(infoBtn) infoBtn.classList.remove('mob-disabled');
-    if(typeof mobOpen==='function') mobOpen('mob-info-overlay','mob-btn-info');
+    if(typeof mobOpen==='function') mobOpen('mob-info-overlay', null);
   }
 }
 
@@ -951,31 +1070,34 @@ const NIGHT_TYPE_COLORS={'Pub':'#60a5fa','Bar':'#a78bfa','Nightclub':'#f87171','
 function renderNightSidebar(key){
   const d=DATA()[key]; if(!d) return;
   const col=getNightColour(d.total);
-  const maxCount=Math.max(1,...Object.values(d.counts));
-  const bars=NIGHT_TYPES.map(type=>{
-    const cnt=d.counts[type]||0;
-    const pct=d.total>0?((cnt/d.total)*100).toFixed(1):0;
-    const bar=(cnt/maxCount*100).toFixed(1);
-    const color=NIGHT_TYPE_COLORS[type]||'#94a3b8';
-    return `<div class="crime-bar" style="${cnt===0?'opacity:0.3;':''}">
-      <div class="crime-bar-header">
-        <div class="crime-bar-label"><span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;display:inline-block"></span><span>${type}</span></div>
-        <div class="crime-bar-stats"><span class="crime-bar-count">${cnt}</span><span class="crime-bar-pct">${pct}%</span></div>
-      </div>
-      <div class="bar-track"><div class="bar-fill" style="width:${bar}%;background:${color}"></div></div>
-    </div>`;
-  }).join('');
   const header=isLSOA()?`<h2>${d.name||key}</h2><div class="sidebar-sub">${d.ward}</div>`:`<h2>${key}</h2>`;
+  // Sort by count descending
+  const sorted=[...NIGHT_TYPES].sort((a,b)=>(d.counts[b]||0)-(d.counts[a]||0));
+  const total=Math.max(1,d.total);
+  let bars='';
+  for(const type of sorted){
+    const cnt=d.counts[type]||0;
+    const pct=(cnt/total*100);
+    const color=NIGHT_TYPE_COLORS[type]||'#94a3b8';
+    bars+=`<div style="margin-bottom:10px;${cnt===0?'opacity:0.3;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+        <span style="font-size:0.62rem;color:var(--text)">${type}</span>
+        <span style="font-size:0.62rem;color:var(--muted);margin-left:6px;white-space:nowrap">${pct.toFixed(1)}% <span style="font-size:0.58rem">${cnt.toLocaleString()}</span></span>
+      </div>
+      <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:4px;transition:width 0.3s ease"></div>
+      </div>
+    </div>`;
+  }
   document.getElementById('sidebar-content').innerHTML=`
     ${header}
     <div class="area-rate" style="color:${col.stroke}">${absMode()?d.total:(d.total/d.population*1000).toFixed(1)}</div>
     <div class="area-rate-label">${absMode()?'businesses':'businesses per 1,000 residents'}</div>
-    <div class="chart-title">breakdown by type</div>${bars}
     <div class="divider"></div>
-    <div style="font-size:0.62rem;color:var(--muted)">
-      Source: Food Hygiene Rating Scheme (FHRS), Sheffield<br/>
-      Population: ONS Census 2021 · Boundaries: ONS ${isLSOA()?'LSOA 2021':'Wards May 2023 BGC'}
-    </div>`;
+    <div class="chart-title">Breakdown by type</div>
+    ${bars}
+    <div class="divider"></div>
+    <div class="data-note"><strong>Source:</strong> Food Hygiene Rating Scheme (FHRS), Sheffield. Population: ONS Census 2021.</div>`;
 }
 
 function areaHeader(d,key){
@@ -1863,6 +1985,8 @@ function finderSelectArea(key){
     });
   }
   highlightFinderAreas();
+  // Open summary panel
+  openSummary(key);
 }
 
 function highlightFinderAreas(){
@@ -1886,29 +2010,279 @@ const _origRefreshMap=refreshMap;
 
 buildCatSelect();
 
+// ── Area Summary ──────────────────────────────────────────────────────────────
+function openSummary(key) {
+  const panel = document.getElementById('summary-panel');
+  const body = document.getElementById('summary-body');
+  const title = document.getElementById('summary-title');
+  if (!panel || !body) return;
+
+  const dEstate = (isLSOA() ? LSOA_ESTATE : WARD_ESTATE)[key];
+  const dResidents = (isLSOA() ? LSOA_RESIDENTS : WARD_RESIDENTS)[key];
+  const areaName = isLSOA() ? (dResidents?.name || dEstate?.name || key) : key;
+  const wardName = isLSOA() ? (dResidents?.ward || dEstate?.ward || '') : '';
+  if (title) title.textContent = areaName;
+
+  body.innerHTML = '<div style="font-size:0.65rem;color:var(--muted);padding:8px 0">Loading...</div>';
+  panel.classList.remove('hidden');
+
+  function sBar(label, cnt, maxCnt, pct, color, indent) {
+    const w = maxCnt > 0 ? (cnt/maxCnt*100).toFixed(1) : 0;
+    const pl = indent ? 'padding-left:12px;' : '';
+    return `<div style="margin-bottom:8px;${pl}${cnt===0?'opacity:0.3':''}">
+      <div style="display:flex;justify-content:space-between;font-size:0.6rem;margin-bottom:3px">
+        <span style="color:var(--text)">${label}</span>
+        <span style="color:var(--muted)">${cnt}${pct!==null?' · '+pct.toFixed(1)+'%':''}</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${w}%;background:${color};border-radius:3px"></div>
+      </div>
+    </div>`;
+  }
+
+  let html2 = '';
+  if (wardName) html2 += `<div style="font-size:0.6rem;color:var(--muted);margin-bottom:16px">${wardName}</div>`;
+
+  // ── Crime ──────────────────────────────────────────────────────────────
+  const dc = (isLSOA() ? LSOA_CRIME : WARD_CRIME)[key];
+  if (dc) {
+    const rate = dc.total / dc.population * 1000;
+    const col = getCrimeColour(rate).stroke;
+    const sorted = [...CRIME_CATS].sort((a,b) => (dc.counts[b]||0)-(dc.counts[a]||0));
+    const maxC = Math.max(1, ...CRIME_CATS.map(c => dc.counts[c]||0));
+    const bars = sorted.map(cat => {
+      const cnt = dc.counts[cat]||0;
+      const pct = dc.total > 0 ? cnt/dc.total*100 : 0;
+      return sBar(cat, cnt, maxC, pct, CRIME_CAT_COLORS[cat]||'#94a3b8', false);
+    }).join('');
+    html2 += `<div class="summary-topic">
+      <div class="summary-topic-header">
+        <span class="summary-topic-name">🚔 Crime Rate</span>
+        <span class="summary-topic-val" style="color:${col}">${rate.toFixed(1)}</span>
+      </div>
+      <div class="summary-topic-sub">crimes / 1,000 residents · ${dc.total} total</div>
+      ${bars}
+    </div>`;
+  }
+
+  // ── Real Estate ────────────────────────────────────────────────────────
+  const de = (isLSOA() ? LSOA_ESTATE : WARD_ESTATE)[key];
+  if (de) {
+    const col = getEstateColour(de.median_price).stroke;
+    const TYPE_ORDER = ['Flat/Maisonette','Terraced','Semi-detached','Detached'];
+    const ROOM_SORT = {'1r':1,'2r':2,'3r':3,'4r':4,'5r':5,'6r':6,'7+r':7};
+    const subtypes = de.subtypes || {};
+    const types = de.types || {};
+    // Build grouped by type → rooms
+    let bars = '';
+    TYPE_ORDER.forEach(type => {
+      const td = types[type];
+      if (!td || !td.count) return;
+      const color = ESTATE_TYPE_COLORS[type]||'#94a3b8';
+      bars += `<div style="margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-size:0.6rem;margin-bottom:3px;padding-top:8px;border-top:1px solid var(--border)">
+          <span style="color:var(--text);font-weight:500">${type}</span>
+          <span style="color:var(--muted)">${fmtPrice(td.median)} · ${td.count} sales</span>
+        </div>
+      </div>`;
+      // Room breakdown within this type
+      const roomKeys = Object.keys(subtypes)
+        .filter(k => k.startsWith(type + ' · ') && subtypes[k].count > 0)
+        .sort((a,b) => (ROOM_SORT[a.split(' · ')[1]]??99) - (ROOM_SORT[b.split(' · ')[1]]??99));
+      // Scale bars by median price; label shows median (count)
+      const roomMedians = roomKeys.map(k => subtypes[k].median || 0);
+      const maxRmed = Math.max(1, ...roomMedians);
+      roomKeys.forEach(k => {
+        const rd = subtypes[k];
+        const lbl = k.replace(/^.+ · /,'');
+        const med = rd.median || 0;
+        const w = maxRmed > 0 ? (med/maxRmed*100).toFixed(1) : 0;
+        const label = med ? `${fmtPrice(med)} <span style="font-size:0.55rem">(${rd.count})</span>` : `—`;
+        bars += `<div style="margin-bottom:8px;padding-left:12px">
+          <div style="display:flex;justify-content:space-between;font-size:0.6rem;margin-bottom:3px">
+            <span style="color:var(--text)">${lbl}</span>
+            <span style="color:var(--muted)">${label}</span>
+          </div>
+          <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${w}%;background:${color};border-radius:3px"></div>
+          </div>
+        </div>`;
+      });
+    });
+    // Trend SVG
+    const yvals = ESTATE_YEARS.map(y => de.yearly?.[y]??null);
+    const trendSvg = buildTrendSVG(yvals, ESTATE_YEARS, 'var(--accent)', v => '£'+(v/1000).toFixed(0)+'k');
+    html2 += `<div class="summary-topic">
+      <div class="summary-topic-header">
+        <span class="summary-topic-name">🏠 Real Estate</span>
+        <span class="summary-topic-val" style="color:${col}">${fmtPrice(de.median_price)}</span>
+      </div>
+      <div class="summary-topic-sub">median purchase price · ${de.total} sales</div>
+      ${bars}
+      ${trendSvg ? `<div style="margin-top:12px"><div style="font-size:0.58rem;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.08em">Price trend 2022–2026</div>${trendSvg}</div>` : ''}
+    </div>`;
+  }
+
+  // ── Nightlife ──────────────────────────────────────────────────────────
+  const dn = (isLSOA() ? LSOA_NIGHT : WARD_NIGHT)[key];
+  if (dn) {
+    const rate = dn.total / dn.population * 1000;
+    const col = getNightRateColour(rate).stroke;
+    const sorted = [...NIGHT_TYPES].sort((a,b) => (dn.counts[b]||0)-(dn.counts[a]||0));
+    const maxN = Math.max(1, dn.total);
+    const bars = sorted.map(type => {
+      const cnt = dn.counts[type]||0;
+      const pct = dn.total > 0 ? cnt/dn.total*100 : 0;
+      return sBar(type, cnt, maxN, pct, NIGHT_TYPE_COLORS[type]||'#94a3b8', false);
+    }).join('');
+    html2 += `<div class="summary-topic">
+      <div class="summary-topic-header">
+        <span class="summary-topic-name">🍺 Nightlife</span>
+        <span class="summary-topic-val" style="color:${col}">${rate.toFixed(1)}</span>
+      </div>
+      <div class="summary-topic-sub">businesses / 1,000 residents · ${dn.total} total</div>
+      ${bars}
+    </div>`;
+  }
+
+  // ── Childcare ──────────────────────────────────────────────────────────
+  const dnu = (isLSOA() ? LSOA_NURSERY : WARD_NURSERY)[key];
+  if (dnu) {
+    const rate = dnu.total / dnu.population * 1000;
+    const col = getNurseryRateColour(rate).stroke;
+    const RATING_ORDER = ['Outstanding','Good','Requires Improvement','Inadequate','Not yet inspected'];
+    const maxR = Math.max(1, ...RATING_ORDER.map(r => dnu.counts[r]||0));
+    const bars = RATING_ORDER.map(r => {
+      const cnt = dnu.counts[r]||0;
+      const pct = dnu.total > 0 ? cnt/dnu.total*100 : 0;
+      return sBar(r, cnt, maxR, pct, NURSERY_RATING_COLORS[r]||'#94a3b8', false);
+    }).join('');
+    html2 += `<div class="summary-topic">
+      <div class="summary-topic-header">
+        <span class="summary-topic-name">🧒 Childcare</span>
+        <span class="summary-topic-val" style="color:${col}">${rate.toFixed(2)}</span>
+      </div>
+      <div class="summary-topic-sub">providers / 1,000 residents · ${dnu.total} total</div>
+      ${bars}
+    </div>`;
+  }
+
+  // ── Schools ────────────────────────────────────────────────────────────
+  const ds = (isLSOA() ? LSOA_SCHOOLS : WARD_SCHOOLS)[key];
+  if (ds) {
+    const rate = ds.total / ds.population * 1000;
+    const col = getSchoolsRateColour(rate).stroke;
+    const PHASE_ORDER = ['Primary','Secondary','16+','All-through','Nursery','Other'];
+    const RATING_ORDER = ['Outstanding','Good','Requires Improvement','Inadequate','Not yet inspected'];
+    const maxS = Math.max(1, ...PHASE_ORDER.map(p => ds.phases[p]||0));
+    let bars = '';
+    PHASE_ORDER.forEach(phase => {
+      const phaseTotal = ds.phases[phase]||0;
+      if (!phaseTotal) return;
+      const phaseColor = SCHOOL_PHASE_COLORS[phase]||'#94a3b8';
+      bars += `<div style="margin-bottom:4px;padding-top:8px;border-top:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;font-size:0.6rem;margin-bottom:3px">
+          <span style="color:var(--text);font-weight:500">${phase}</span>
+          <span style="color:var(--muted)">${phaseTotal} school${phaseTotal>1?'s':''}</span>
+        </div>
+      </div>`;
+      RATING_ORDER.forEach(rating => {
+        const cnt = ds.subtypes[phase+' · '+rating]||0;
+        if (!cnt) return;
+        bars += sBar(rating, cnt, maxS, null, SCHOOL_RATING_COLORS[rating]||'#94a3b8', true);
+      });
+    });
+    html2 += `<div class="summary-topic">
+      <div class="summary-topic-header">
+        <span class="summary-topic-name">🏫 Schools</span>
+        <span class="summary-topic-val" style="color:${col}">${rate.toFixed(2)}</span>
+      </div>
+      <div class="summary-topic-sub">schools / 1,000 residents · ${ds.total} total</div>
+      ${bars}
+    </div>`;
+  }
+
+  // ── Residents ──────────────────────────────────────────────────────────
+  const dr = (isLSOA() ? LSOA_RESIDENTS : WARD_RESIDENTS)[key];
+  if (dr) {
+    const total = dr.total || 1;
+    const sorted = [...RESIDENTS_GROUPS].sort((a,b) => (dr[b]||0)-(dr[a]||0));
+    const maxHh = Math.max(1, ...RESIDENTS_GROUPS.map(g => dr[g]||0));
+    const bars = sorted.map(g => {
+      const cnt = dr[g]||0;
+      const pct = cnt/total*100;
+      return sBar(RESIDENTS_LABELS[g], cnt, maxHh, pct, RESIDENTS_COLOURS[g]||'#94a3b8', false);
+    }).join('');
+    html2 += `<div class="summary-topic">
+      <div class="summary-topic-header">
+        <span class="summary-topic-name">👨‍👩‍👧 Residents</span>
+        <span class="summary-topic-val" style="color:var(--text)">${dr.total.toLocaleString()}</span>
+      </div>
+      <div class="summary-topic-sub">total households · Census 2021</div>
+      ${bars}
+    </div>`;
+  }
+
+  body.innerHTML = html2;
+
+  // Also populate mobile summary overlay
+  if (typeof isMobile === 'function' && isMobile()) {
+    const mobTitle = document.getElementById('mob-summary-title');
+    const mobBody = document.getElementById('mob-summary-body');
+    if (mobTitle) mobTitle.textContent = areaName;
+    if (mobBody) mobBody.innerHTML = html2;
+    mobOpen('mob-summary-overlay', null);
+  }
+}
+
+function closeSummary() {
+  document.getElementById('summary-panel').classList.add('hidden');
+}
+
+
 // ── Mobile overlay logic ──────────────────────────────────────────────────
 const isMobile = () => window.innerWidth <= 768;
 
 function mobOpen(overlayId, btnId) {
   if (!isMobile()) return;
-  // close all overlays first
   document.querySelectorAll('.mob-overlay').forEach(o => o.classList.remove('mob-active'));
-  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('mob-active'));
   document.getElementById(overlayId).classList.add('mob-active');
-  if (btnId) document.getElementById(btnId).classList.add('mob-active');
-  // sync stats overlay content when opened
   if (overlayId === 'mob-stats-overlay') mobSyncStats();
+  if (overlayId === 'mob-topic-overlay') mobUpdateTopicToggles();
+  // Close menu when overlay opens
+  const items = document.getElementById('mob-menu-items');
+  const toggle = document.getElementById('mob-menu-toggle');
+  if (items) items.classList.remove('mob-menu-open');
+  if (toggle) toggle.textContent = '≡ Menu';
+}
+
+function mobMenuOpen(overlayId) {
+  mobOpen(overlayId, null);
+}
+
+function mobToggleMenu() {
+  const items = document.getElementById('mob-menu-items');
+  const toggle = document.getElementById('mob-menu-toggle');
+  if (!items || !toggle) return;
+  const isOpen = items.classList.contains('mob-menu-open');
+  if (isOpen) {
+    items.classList.remove('mob-menu-open');
+    toggle.textContent = '≡ Menu';
+  } else {
+    // Close any open overlays first
+    document.querySelectorAll('.mob-overlay').forEach(o => o.classList.remove('mob-active'));
+    items.classList.add('mob-menu-open');
+    toggle.textContent = '✕ Close';
+  }
 }
 
 function mobClose(overlayId) {
   document.getElementById(overlayId).classList.remove('mob-active');
-  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('mob-active'));
   setTimeout(() => map.invalidateSize(), 100);
 }
 
 function mobCloseAll() {
   document.querySelectorAll('.mob-overlay').forEach(o => o.classList.remove('mob-active'));
-  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('mob-active'));
   setTimeout(() => map.invalidateSize(), 100);
 }
 
@@ -1936,6 +2310,13 @@ function mobRunFinder() {
 
 // Sync stats panel content to mobile overlay
 function mobSyncStats() {
+  // Sync cat select options from desktop
+  const mobCat = document.getElementById('mob-chart-cat-select');
+  const deskCat = document.getElementById('chart-cat-select');
+  if (mobCat && deskCat) {
+    mobCat.innerHTML = deskCat.innerHTML;
+    mobCat.value = deskCat.value;
+  }
   // Force the desktop chart to build (it's hidden but still works)
   try { buildChart(); } catch(e) {}
   const chartBody = document.getElementById('chart-body');
@@ -1947,6 +2328,14 @@ function mobSyncStats() {
   if (colLabels) {
     const hdr = colLabels.cloneNode(true);
     hdr.style.padding = '0 0 8px 0';
+    // Wire sort clicks on cloned headers
+    hdr.querySelectorAll('.chart-col-label').forEach((el, i) => {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => {
+        const orig = colLabels.querySelectorAll('.chart-col-label')[i];
+        if (orig) { orig.click(); setTimeout(mobSyncStats, 50); }
+      });
+    });
     mobBody.appendChild(hdr);
   }
   // Rows
@@ -1992,32 +2381,49 @@ function mobShowInfo(key) {
 }
 
 // ── Wire mobile topic/area selects to desktop selects ────────────────────
-document.getElementById('mob-mode-select').addEventListener('change', function() {
-  document.getElementById('mode-select').value = this.value;
-  document.getElementById('mode-select').dispatchEvent(new Event('change'));
-  mobUpdateTopicToggles();
-});
-document.getElementById('mob-area-select').addEventListener('change', function() {
-  document.getElementById('area-select').value = this.value;
-  document.getElementById('area-select').dispatchEvent(new Event('change'));
-});
-document.getElementById('mob-abs-toggle').addEventListener('change', function() {
-  document.getElementById('abs-toggle').checked = this.checked;
-  document.getElementById('abs-toggle').dispatchEvent(new Event('change'));
-});
-document.getElementById('mob-evo-toggle').addEventListener('change', function() {
-  document.getElementById('evo-toggle').checked = this.checked;
-  document.getElementById('evo-toggle').dispatchEvent(new Event('change'));
-});
-document.getElementById('mob-rooms-toggle').addEventListener('change', function() {
-  document.getElementById('rooms-toggle').checked = this.checked;
-  document.getElementById('rooms-toggle').dispatchEvent(new Event('change'));
-});
-document.getElementById('mob-resident-group-select').addEventListener('change', function() {
-  document.getElementById('resident-group-select').value = this.value;
-  currentResidentGroup = this.value;
-  onSelectChange();
-});
+// Mobile element listeners — deferred until DOM is fully ready
+function mobBindListeners() {
+  const mobMode = document.getElementById('mob-mode-select');
+  if (!mobMode) return; // not mobile or elements not yet in DOM
+  mobMode.addEventListener('change', function() {
+    document.getElementById('mode-select').value = this.value;
+    document.getElementById('mode-select').dispatchEvent(new Event('change'));
+    mobUpdateTopicToggles();
+  });
+  document.getElementById('mob-area-select').addEventListener('change', function() {
+    document.getElementById('area-select').value = this.value;
+    document.getElementById('area-select').dispatchEvent(new Event('change'));
+  });
+  document.getElementById('mob-abs-toggle').addEventListener('change', function() {
+    document.getElementById('abs-toggle').checked = this.checked;
+    document.getElementById('abs-toggle').dispatchEvent(new Event('change'));
+  });
+  document.getElementById('mob-evo-toggle').addEventListener('change', function() {
+    document.getElementById('evo-toggle').checked = this.checked;
+    document.getElementById('evo-toggle').dispatchEvent(new Event('change'));
+  });
+  document.getElementById('mob-rooms-toggle').addEventListener('change', function() {
+    document.getElementById('rooms-toggle').checked = this.checked;
+    document.getElementById('rooms-toggle').dispatchEvent(new Event('change'));
+  });
+  document.getElementById('mob-resident-group-select').addEventListener('change', function() {
+    document.getElementById('resident-group-select').value = this.value;
+    currentResidentGroup = this.value;
+    onSelectChange();
+  });
+  // Sync mob chart cat select with desktop
+  const mobCatSel = document.getElementById('mob-chart-cat-select');
+  const deskCatSel = document.getElementById('chart-cat-select');
+  if (mobCatSel && deskCatSel) {
+    // Copy options
+    mobCatSel.innerHTML = deskCatSel.innerHTML;
+    mobCatSel.addEventListener('change', function() {
+      deskCatSel.value = this.value;
+      deskCatSel.dispatchEvent(new Event('change'));
+      setTimeout(mobSyncStats, 50);
+    });
+  }
+}
 
 function mobUpdateTopicToggles() {
   const mode = document.getElementById('mob-mode-select').value;
@@ -2033,15 +2439,20 @@ function mobUpdateTopicToggles() {
 // Mobile info overlay hook is now inside renderSidebar directly
 
 // ── Init ──────────────────────────────────────────────────────────────────
-try {
-  if (isMobile()) {
-    if(window.mobLog) window.mobLog("calling mobInitFinder...");
+// Bind mobile listeners and init after full DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  if (!isMobile()) return;
+  try {
+    if(window.mobLog) window.mobLog("DOM ready, binding listeners...");
+    mobBindListeners();
     mobInitFinder();
-    if(window.mobLog) window.mobLog("mobInitFinder done");
     mobUpdateTopicToggles();
     if(window.mobLog) window.mobLog("mobile init complete");
+  } catch(e) {
+    if(window.mobLog) window.mobLog("CATCH: " + e.message);
+    console.warn('Mobile init error:', e);
   }
-} catch(e) { if(window.mobLog) window.mobLog("CATCH: "+e.message); console.warn('Mobile init error:', e); }
+});
 
 // On mobile, wait for layout to settle before building the geo layer
 if (window.innerWidth <= 768) {
@@ -2111,6 +2522,14 @@ if (window.innerWidth <= 768) {
         <option value="others">Other households</option>
       </select>
     </div>
+    <div class="mob-toggle-row" id="mob-school-markers-row" style="display:none">
+      <span class="mob-toggle-label">Show schools on map</span>
+      <label class="toggle-switch"><input type="checkbox" id="mob-school-markers-toggle"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
+    <div class="mob-toggle-row" id="mob-nursery-markers-row" style="display:none">
+      <span class="mob-toggle-label">Show nurseries on map</span>
+      <label class="toggle-switch"><input type="checkbox" id="mob-nursery-markers-toggle"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
   </div>
 </div>
 
@@ -2120,8 +2539,12 @@ if (window.innerWidth <= 768) {
     <button class="mob-back" onclick="mobClose('mob-stats-overlay')">←</button>
     <span class="mob-overlay-title">Aggregated Stats</span>
   </div>
+  <div style="padding:10px 18px 0;flex-shrink:0;border-bottom:1px solid var(--border)">
+    <div class="mob-topic-label" style="margin-bottom:6px">Second column</div>
+    <select class="mob-topic-select" id="mob-chart-cat-select" style="margin-bottom:10px"></select>
+  </div>
   <div class="mob-overlay-body" id="mob-stats-body">
-    <div style="font-size:0.7rem;color:var(--muted);padding:20px 0">Select a topic and tap an area on the map first.</div>
+    <div style="font-size:0.7rem;color:var(--muted);padding:20px 0">Tap an area on the map to see stats.</div>
   </div>
 </div>
 
@@ -2133,6 +2556,20 @@ if (window.innerWidth <= 768) {
   </div>
   <div class="mob-overlay-body" id="mob-finder-body-wrap">
     <!-- finder-body moved here by JS -->
+  </div>
+</div>
+
+<!-- Summary overlay (mobile) -->
+<div class="mob-overlay" id="mob-summary-overlay">
+  <div class="mob-overlay-header">
+    <button class="mob-back" onclick="mobClose('mob-summary-overlay')">←</button>
+    <div>
+      <div style="font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px">Area Summary</div>
+      <span class="mob-overlay-title" id="mob-summary-title">—</span>
+    </div>
+  </div>
+  <div class="mob-overlay-body" id="mob-summary-body">
+    <div style="font-size:0.7rem;color:var(--muted);padding:20px 0">Select an area from the Finder results.</div>
   </div>
 </div>
 
@@ -2148,12 +2585,14 @@ if (window.innerWidth <= 768) {
 </div>
 
 <!-- Bottom nav bar -->
-<nav class="mob-nav" id="mob-nav">
-  <button class="mob-nav-btn" id="mob-btn-topic"   onclick="mobOpen('mob-topic-overlay','mob-btn-topic')">🗺️</button>
-  <button class="mob-nav-btn" id="mob-btn-stats"   onclick="mobOpen('mob-stats-overlay','mob-btn-stats')">📊</button>
-  <button class="mob-nav-btn" id="mob-btn-finder"  onclick="mobOpen('mob-finder-overlay','mob-btn-finder')">🔍</button>
-  <button class="mob-nav-btn mob-disabled" id="mob-btn-info" onclick="mobOpen('mob-info-overlay','mob-btn-info')">ℹ️</button>
-</nav>
+<div class="mob-menu-wrap" id="mob-menu-wrap">
+  <button class="mob-menu-toggle" id="mob-menu-toggle" onclick="mobToggleMenu()">≡ Menu</button>
+  <div class="mob-menu-items" id="mob-menu-items">
+    <button class="mob-menu-item" onclick="mobMenuOpen('mob-topic-overlay')">Topic &amp; Area</button>
+    <button class="mob-menu-item" onclick="mobMenuOpen('mob-stats-overlay')">Aggregated Stats</button>
+    <button class="mob-menu-item" onclick="mobMenuOpen('mob-finder-overlay')">Find the area you need!</button>
+  </div>
+</div>
 
 </body>
 </html>

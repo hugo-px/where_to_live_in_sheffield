@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=1024, initial-scale=0.4, minimum-scale=0.3, maximum-scale=3.0, user-scalable=yes"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"/>
   <title>Where to Live in Sheffield?</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script>window.onerror=function(m,s,l){if(!s||s===""||l===0)return true;};/* suppress cross-origin errors */</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
     :root{--bg:#0d0f14;--panel:#13161e;--border:#1f2333;--text:#e8e4dc;--muted:#6b7280;--accent:#e8b86d}
@@ -132,9 +133,205 @@
     .finder-result-bar{height:3px;background:var(--border);border-radius:2px;margin-top:3px;overflow:hidden}
     .finder-result-bar-fill{height:100%;border-radius:2px;background:var(--accent)}
     .finder-no-results{font-size:0.65rem;color:var(--muted);font-style:italic;padding:8px 0}
+
+    /* ── Mobile layout (≤768px) ──────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      /* Hide desktop chrome */
+      header { display: none !important; }
+      .chart-toggle-btn { display: none !important; }
+      .finder-btn { display: none !important; }
+      .finder-resize-handle { display: none !important; }
+      .chart-resize-handle { display: none !important; }
+
+      /* Full screen layout */
+      body { overflow: hidden; }
+      .layout { position: fixed; inset: 0; }
+
+      /* Map fills everything */
+      .map-wrap { position: fixed; inset: 0; z-index: 1; }
+      #map { position: absolute; inset: 0; height: 100% !important; width: 100% !important; }
+
+      /* Hide all desktop panels */
+      .finder-panel,
+      .chart-panel,
+      .sidebar { display: none !important; }
+
+      /* ── Mobile overlays ─────────────────────────────────────────────── */
+      .mob-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: var(--panel);
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .mob-overlay.mob-active { display: flex; }
+
+      .mob-overlay-header {
+        padding: 16px 18px 12px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+        background: var(--bg);
+      }
+      .mob-back {
+        background: none;
+        border: none;
+        color: var(--accent);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .mob-overlay-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.1rem;
+        color: var(--accent);
+        flex: 1;
+      }
+      .mob-overlay-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 18px 100px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* ── Topic overlay specifics ─────────────────────────────────────── */
+      .mob-topic-row {
+        margin-bottom: 20px;
+      }
+      .mob-topic-label {
+        font-size: 0.6rem;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .mob-topic-select {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: 'DM Mono', monospace;
+        font-size: 0.9rem;
+        padding: 10px 12px;
+        border-radius: 6px;
+        width: 100%;
+        cursor: pointer;
+        outline: none;
+      }
+      .mob-topic-select:focus { border-color: var(--accent); }
+      .mob-topic-select option { background: var(--bg); }
+
+      .mob-toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .mob-toggle-label {
+        font-size: 0.65rem;
+        color: var(--text);
+        letter-spacing: 0.05em;
+      }
+
+      /* ── Bottom navigation bar ───────────────────────────────────────── */
+      .mob-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: var(--bg);
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: stretch;
+        height: 64px;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .mob-nav-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-family: 'DM Mono', monospace;
+        font-size: 1.3rem;
+        cursor: pointer;
+        transition: color 0.15s, background 0.15s;
+        gap: 2px;
+        padding: 0;
+        border-right: 1px solid var(--border);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .mob-nav-btn:last-child { border-right: none; }
+      .mob-nav-btn:active { background: var(--border); }
+      .mob-nav-btn.mob-active { color: var(--accent); }
+      .mob-nav-btn.mob-disabled { opacity: 0.3; }
+
+      /* Leaflet zoom controls — push above nav bar */
+      .leaflet-top.leaflet-left { top: 12px !important; }
+      .leaflet-control-zoom { margin-left: 12px !important; }
+      .leaflet-control-attribution { margin-bottom: 70px !important; }
+
+      /* Finder inside overlay — remove panel-specific styles */
+      .mob-overlay .finder-body {
+        padding: 0;
+        overflow: visible;
+      }
+      .mob-overlay .finder-q select {
+        font-size: 0.85rem;
+        padding: 10px 12px;
+      }
+      .mob-overlay .finder-q-label {
+        font-size: 0.65rem;
+        margin-bottom: 6px;
+      }
+      .mob-overlay .finder-q {
+        margin-bottom: 18px;
+      }
+      .mob-overlay .finder-run-btn {
+        font-size: 0.85rem;
+        padding: 14px;
+        margin-top: 8px;
+        margin-bottom: 20px;
+      }
+      .mob-overlay .finder-result-row {
+        padding: 10px 12px;
+      }
+      .mob-overlay .finder-result-name {
+        font-size: 0.72rem;
+      }
+      .mob-overlay .finder-result-score {
+        font-size: 0.78rem;
+      }
+
+      /* Chart inside overlay */
+      .mob-overlay .chart-col-labels {
+        padding: 8px 0 4px;
+      }
+      .mob-overlay .chart-body {
+        padding: 4px 0 16px;
+        overflow: visible;
+      }
+
+      /* Sidebar inside overlay */
+      .mob-overlay .sidebar-inner {
+        padding: 0;
+        overflow: visible;
+      }
+    }
   </style>
 </head>
 <body>
+
 <header>
   <h1>Where to Live in <span>Sheffield?</span></h1>
   <div class="hsel-wrap">
@@ -261,7 +458,7 @@
           <option value="spatial">Within 2km (incl. neighbours)</option>
         </select>
       </div>
-      <button class="finder-run-btn" onclick="runFinder()">Find best areas →</button>
+      <button class="finder-run-btn" id="finder-run-btn">Find best areas →</button>
       <div class="finder-divider"></div>
       <div id="finder-results"></div>
     </div>
@@ -695,6 +892,19 @@ function renderSidebar(key){
   else if(isSchools()) renderSchoolsSidebar(key);
   else if(isResidents()) renderResidentsSidebar(key);
   else                 renderEstateSidebar(key);
+  // Mobile: mirror content to info overlay and auto-open it
+  if(typeof isMobile==='function' && isMobile() && key){
+    const d=DATA()[key];
+    const name=isLSOA()?(d?.name||key):key;
+    const title=document.getElementById('mob-info-title');
+    if(title) title.textContent=name;
+    const sidebarInner=document.querySelector('.sidebar-inner');
+    const body=document.getElementById('mob-info-body');
+    if(sidebarInner&&body) body.innerHTML=sidebarInner.innerHTML;
+    const infoBtn=document.getElementById('mob-btn-info');
+    if(infoBtn) infoBtn.classList.remove('mob-disabled');
+    if(typeof mobOpen==='function') mobOpen('mob-info-overlay','mob-btn-info');
+  }
 }
 
 function renderNurserySidebar(key){
@@ -1039,6 +1249,9 @@ function onSelectChange(){
 document.getElementById('mode-select').addEventListener('change',function(){currentMode=this.value;onSelectChange();});
 document.getElementById('area-select').addEventListener('change',function(){currentArea=this.value;onSelectChange();});
 document.getElementById('resident-group-select').addEventListener('change',function(){currentResidentGroup=this.value;onSelectChange();});
+const _finderBtn=document.getElementById('finder-run-btn');
+_finderBtn.addEventListener('click',function(e){e.preventDefault();runFinder();});
+_finderBtn.addEventListener('touchend',function(e){e.preventDefault();runFinder();});
 document.getElementById('area-select').addEventListener('change',()=>{ if(!document.getElementById('finder-panel').classList.contains('hidden')){runFinder();} },true);
 
 // ── Chart panel ───────────────────────────────────────────────────────────────
@@ -1672,8 +1885,275 @@ const _origOnSelectChange=onSelectChange;
 const _origRefreshMap=refreshMap;
 
 buildCatSelect();
-buildGeoLayer(WARD_GEO);
-updateLegend();
+
+// ── Mobile overlay logic ──────────────────────────────────────────────────
+const isMobile = () => window.innerWidth <= 768;
+
+function mobOpen(overlayId, btnId) {
+  if (!isMobile()) return;
+  // close all overlays first
+  document.querySelectorAll('.mob-overlay').forEach(o => o.classList.remove('mob-active'));
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('mob-active'));
+  document.getElementById(overlayId).classList.add('mob-active');
+  if (btnId) document.getElementById(btnId).classList.add('mob-active');
+  // sync stats overlay content when opened
+  if (overlayId === 'mob-stats-overlay') mobSyncStats();
+}
+
+function mobClose(overlayId) {
+  document.getElementById(overlayId).classList.remove('mob-active');
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('mob-active'));
+  setTimeout(() => map.invalidateSize(), 100);
+}
+
+function mobCloseAll() {
+  document.querySelectorAll('.mob-overlay').forEach(o => o.classList.remove('mob-active'));
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('mob-active'));
+  setTimeout(() => map.invalidateSize(), 100);
+}
+
+// Sync desktop finder questions into mobile finder overlay
+function mobInitFinder() {
+  const src = document.getElementById('finder-body');
+  const wrap = document.getElementById('mob-finder-body-wrap');
+  if (!src || !wrap) return;
+  // Physically move the real finder-body into the mobile overlay
+  // This keeps a single set of IDs (fq-type etc.) — no duplication
+  wrap.appendChild(src);
+  src.style.overflow = 'visible';
+  src.style.padding = '0';
+  // Re-wire the run button with touchend support
+  const btn = document.getElementById('finder-run-btn');
+  if (btn) {
+    btn.addEventListener('touchend', function(e) { e.preventDefault(); runFinder(); });
+  }
+}
+
+function mobRunFinder() {
+  // finder-body is now the real one — just run directly
+  runFinder();
+}
+
+// Sync stats panel content to mobile overlay
+function mobSyncStats() {
+  // Force the desktop chart to build (it's hidden but still works)
+  try { buildChart(); } catch(e) {}
+  const chartBody = document.getElementById('chart-body');
+  const colLabels = document.querySelector('.chart-col-labels');
+  const mobBody = document.getElementById('mob-stats-body');
+  if (!chartBody || !mobBody) return;
+  mobBody.innerHTML = '';
+  // Column headers
+  if (colLabels) {
+    const hdr = colLabels.cloneNode(true);
+    hdr.style.padding = '0 0 8px 0';
+    mobBody.appendChild(hdr);
+  }
+  // Rows
+  const rows = chartBody.cloneNode(true);
+  rows.style.overflow = 'visible';
+  rows.style.padding = '0';
+  // Wire up click handlers on cloned rows
+  mobBody.appendChild(rows);
+  mobBody.querySelectorAll('.chart-row-name').forEach(el => {
+    el.addEventListener('click', () => {
+      const k = el.closest('.chart-row').dataset.key;
+      mobClose('mob-stats-overlay');
+      if (geoLayer) geoLayer.eachLayer(l => {
+        if (l.feature && areaKey(l.feature) === k) {
+          l.fire('click', {originalEvent:{}, latlng: l.getBounds().getCenter()});
+          map.fitBounds(l.getBounds(), {padding:[40,40], maxZoom:14, animate:true});
+        }
+      });
+    });
+  });
+}
+
+// Show area info in mobile overlay
+function mobShowInfo(key) {
+  if (!isMobile()) return;
+  const title = document.getElementById('mob-info-title');
+  const body = document.getElementById('mob-info-body');
+  // Get name
+  const d = DATA()[key];
+  const name = isLSOA() ? (d?.name || key) : key;
+  if (title) title.textContent = name;
+  // Render sidebar content then copy it
+  renderSidebar(key);
+  const sidebarInner = document.querySelector('.sidebar-inner');
+  if (sidebarInner && body) {
+    body.innerHTML = sidebarInner.innerHTML;
+  }
+  // Enable info button
+  const infoBtn = document.getElementById('mob-btn-info');
+  if (infoBtn) infoBtn.classList.remove('mob-disabled');
+  // Open the info overlay
+  mobOpen('mob-info-overlay', 'mob-btn-info');
+}
+
+// ── Wire mobile topic/area selects to desktop selects ────────────────────
+document.getElementById('mob-mode-select').addEventListener('change', function() {
+  document.getElementById('mode-select').value = this.value;
+  document.getElementById('mode-select').dispatchEvent(new Event('change'));
+  mobUpdateTopicToggles();
+});
+document.getElementById('mob-area-select').addEventListener('change', function() {
+  document.getElementById('area-select').value = this.value;
+  document.getElementById('area-select').dispatchEvent(new Event('change'));
+});
+document.getElementById('mob-abs-toggle').addEventListener('change', function() {
+  document.getElementById('abs-toggle').checked = this.checked;
+  document.getElementById('abs-toggle').dispatchEvent(new Event('change'));
+});
+document.getElementById('mob-evo-toggle').addEventListener('change', function() {
+  document.getElementById('evo-toggle').checked = this.checked;
+  document.getElementById('evo-toggle').dispatchEvent(new Event('change'));
+});
+document.getElementById('mob-rooms-toggle').addEventListener('change', function() {
+  document.getElementById('rooms-toggle').checked = this.checked;
+  document.getElementById('rooms-toggle').dispatchEvent(new Event('change'));
+});
+document.getElementById('mob-resident-group-select').addEventListener('change', function() {
+  document.getElementById('resident-group-select').value = this.value;
+  currentResidentGroup = this.value;
+  onSelectChange();
+});
+
+function mobUpdateTopicToggles() {
+  const mode = document.getElementById('mob-mode-select').value;
+  const isEstate = mode === 'estate';
+  const isRes = mode === 'residents';
+  const isCrimeNight = ['crime','night','nursery','schools'].includes(mode);
+  document.getElementById('mob-abs-row').style.display = (isCrimeNight || isRes) ? 'flex' : 'none';
+  document.getElementById('mob-evo-row').style.display = isEstate ? 'flex' : 'none';
+  document.getElementById('mob-rooms-row').style.display = isEstate ? 'flex' : 'none';
+  document.getElementById('mob-resident-group-row').style.display = isRes ? 'flex' : 'none';
+}
+
+// Mobile info overlay hook is now inside renderSidebar directly
+
+// ── Init ──────────────────────────────────────────────────────────────────
+try {
+  if (isMobile()) {
+    if(window.mobLog) window.mobLog("calling mobInitFinder...");
+    mobInitFinder();
+    if(window.mobLog) window.mobLog("mobInitFinder done");
+    mobUpdateTopicToggles();
+    if(window.mobLog) window.mobLog("mobile init complete");
+  }
+} catch(e) { if(window.mobLog) window.mobLog("CATCH: "+e.message); console.warn('Mobile init error:', e); }
+
+// On mobile, wait for layout to settle before building the geo layer
+if (window.innerWidth <= 768) {
+  if(window.mobLog) window.mobLog("mobile init start");
+  setTimeout(() => {
+    if(window.mobLog) window.mobLog("building geo layer...");
+    map.invalidateSize(true);
+    buildGeoLayer(WARD_GEO);
+    updateLegend();
+    // Fly to Sheffield after layer builds
+    setTimeout(() => map.setView([53.383, -1.476], 11), 100);
+  }, 600);
+} else {
+  buildGeoLayer(WARD_GEO);
+  updateLegend();
+}
 </script>
+
+<!-- ══ MOBILE OVERLAYS ══════════════════════════════════════════════════ -->
+
+<!-- Topic overlay -->
+<div class="mob-overlay" id="mob-topic-overlay">
+  <div class="mob-overlay-header">
+    <button class="mob-back" onclick="mobClose('mob-topic-overlay')">←</button>
+    <span class="mob-overlay-title">Topic &amp; Area</span>
+  </div>
+  <div class="mob-overlay-body">
+    <div class="mob-topic-row">
+      <div class="mob-topic-label">Topic</div>
+      <select class="mob-topic-select" id="mob-mode-select">
+        <option value="crime">Crime Rate</option>
+        <option value="estate">Real Estate · Purchase</option>
+        <option value="night">Nightlife</option>
+        <option value="nursery">Childcare</option>
+        <option value="schools">Schools</option>
+        <option value="residents">Residents</option>
+      </select>
+    </div>
+    <div class="mob-topic-row">
+      <div class="mob-topic-label">Area</div>
+      <select class="mob-topic-select" id="mob-area-select">
+        <option value="ward">Wards</option>
+        <option value="lsoa">LSOA</option>
+      </select>
+    </div>
+    <div class="mob-toggle-row" id="mob-abs-row">
+      <span class="mob-toggle-label">Absolute counts</span>
+      <label class="toggle-switch"><input type="checkbox" id="mob-abs-toggle"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
+    <div class="mob-toggle-row" id="mob-evo-row">
+      <span class="mob-toggle-label">Price evolution</span>
+      <label class="toggle-switch"><input type="checkbox" id="mob-evo-toggle"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
+    <div class="mob-toggle-row" id="mob-rooms-row">
+      <span class="mob-toggle-label">Filter by rooms</span>
+      <label class="toggle-switch"><input type="checkbox" id="mob-rooms-toggle"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+    </div>
+    <div class="mob-toggle-row" id="mob-resident-group-row" style="display:none;flex-direction:column;align-items:flex-start;gap:8px;padding:14px 0">
+      <span class="mob-toggle-label">Household group to display on map</span>
+      <select class="mob-topic-select" id="mob-resident-group-select">
+        <option value="families">Families w/ dep. children</option>
+        <option value="retirees">Retirees (66+)</option>
+        <option value="couples">Couples, no children</option>
+        <option value="emptynesters">Empty nesters</option>
+        <option value="loneperson">Single-person (&lt;66)</option>
+        <option value="students">Students / other</option>
+        <option value="others">Other households</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Stats overlay -->
+<div class="mob-overlay" id="mob-stats-overlay">
+  <div class="mob-overlay-header">
+    <button class="mob-back" onclick="mobClose('mob-stats-overlay')">←</button>
+    <span class="mob-overlay-title">Aggregated Stats</span>
+  </div>
+  <div class="mob-overlay-body" id="mob-stats-body">
+    <div style="font-size:0.7rem;color:var(--muted);padding:20px 0">Select a topic and tap an area on the map first.</div>
+  </div>
+</div>
+
+<!-- Finder overlay -->
+<div class="mob-overlay" id="mob-finder-overlay">
+  <div class="mob-overlay-header">
+    <button class="mob-back" onclick="mobClose('mob-finder-overlay')">←</button>
+    <span class="mob-overlay-title">Find the area you need!</span>
+  </div>
+  <div class="mob-overlay-body" id="mob-finder-body-wrap">
+    <!-- finder-body moved here by JS -->
+  </div>
+</div>
+
+<!-- Info overlay -->
+<div class="mob-overlay" id="mob-info-overlay">
+  <div class="mob-overlay-header">
+    <button class="mob-back" onclick="mobClose('mob-info-overlay')">←</button>
+    <span class="mob-overlay-title" id="mob-info-title">Area Info</span>
+  </div>
+  <div class="mob-overlay-body" id="mob-info-body">
+    <div style="font-size:0.7rem;color:var(--muted);padding:20px 0">Tap an area on the map to see details.</div>
+  </div>
+</div>
+
+<!-- Bottom nav bar -->
+<nav class="mob-nav" id="mob-nav">
+  <button class="mob-nav-btn" id="mob-btn-topic"   onclick="mobOpen('mob-topic-overlay','mob-btn-topic')">🗺️</button>
+  <button class="mob-nav-btn" id="mob-btn-stats"   onclick="mobOpen('mob-stats-overlay','mob-btn-stats')">📊</button>
+  <button class="mob-nav-btn" id="mob-btn-finder"  onclick="mobOpen('mob-finder-overlay','mob-btn-finder')">🔍</button>
+  <button class="mob-nav-btn mob-disabled" id="mob-btn-info" onclick="mobOpen('mob-info-overlay','mob-btn-info')">ℹ️</button>
+</nav>
+
 </body>
 </html>

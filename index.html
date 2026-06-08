@@ -1317,7 +1317,7 @@ function refreshMap(){
     const key=areaKey(layer.feature),isActive=layer===lockedLayer,col=wardColour(key);
     layer.setStyle({fillColor:col.fill,fillOpacity:isActive?0.88:1,color:isActive?'#e8b86d':col.stroke,weight:isActive?(isLSOA()?3:4):(isLSOA()?0.6:1.2),opacity:isActive?1:0.8});
     const _rtc=getTooltipContent(key);
-    if(_rtc) layer.setTooltipContent(_rtc);
+    if(_rtc && layer.getTooltip()) layer.setTooltipContent(_rtc);
   });
   updateLegend();
 }
@@ -1329,13 +1329,15 @@ function buildGeoLayer(geojson){
     style:f=>{const col=wardColour(areaKey(f));return{fillColor:col.fill,fillOpacity:1,color:col.stroke,weight:isLSOA()?0.6:1.2,opacity:0.8};},
     onEachFeature:(feature,layer)=>{
       const key=areaKey(feature);
+      // Pre-bind tooltip so it's always ready — content updated on hover
+      layer.bindTooltip('',{sticky:true,className:'area-tooltip',offset:[14,0]});
       layer.on('mouseover',function(){
         if(lockedLayer)return;
         const _tc=getTooltipContent(key);
-        if(!_tc) return;
-        if(this.getTooltip()) this.setTooltipContent(_tc);
-        else this.bindTooltip(_tc,{sticky:true,className:'area-tooltip',offset:[14,0]});
-        this.openTooltip();
+        if(_tc){
+          this.setTooltipContent(_tc);
+          this.openTooltip();
+        }
         styleActive(this);renderSidebar(key);
       });
       layer.on('mouseout',function(){if(lockedLayer)return;this.closeTooltip();styleDefault(this,key);});

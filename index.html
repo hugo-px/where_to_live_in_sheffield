@@ -138,13 +138,15 @@
 
     /* ── Mobile layout (≤768px) ──────────────────────────────────────────── */
     /* Mobile-only elements — hidden by default on desktop */
-    .mob-overlay, .mob-menu-wrap, #mob-debug { display: none !important; }
+    .mob-overlay, .mob-menu-wrap, #mob-debug, .mob-map-header, .mob-topic-bar, .mob-legend-strip, #mob-fab-wrap { display: none !important; }
 
     @media (max-width: 768px) {
       .mob-overlay { display: none; }  /* overrides desktop !important */
       .mob-overlay.mob-active { display: flex !important; }
       .mob-menu-wrap { display: flex !important; }
+      #mob-fab-wrap { display: flex !important; }
       #mob-debug { display: block !important; }
+
       /* Hide desktop chrome */
       header { display: none !important; }
       .chart-toggle-btn { display: none !important; }
@@ -152,18 +154,86 @@
       .finder-resize-handle { display: none !important; }
       .chart-resize-handle { display: none !important; }
 
+      /* Hide desktop panels */
+      .finder-panel, .chart-panel, .sidebar, .summary-panel { display: none !important; }
+
+      /* Show mobile-only map chrome */
+      .mob-map-header { display: flex !important; }
+      .mob-topic-bar { display: flex !important; }
+      .mob-legend-strip { display: flex !important; }
+
       /* Full screen layout */
       body { overflow: hidden; }
       .layout { position: fixed; inset: 0; }
 
-      /* Map fills everything */
-      .map-wrap { position: fixed; inset: 0; z-index: 1; }
+      /* Map leaves room for fixed top bars (~81px) and legend strip (~60px) */
+      .map-wrap { position: fixed; top: 81px; left: 0; right: 0; bottom: 56px; z-index: 1; }
       #map { position: absolute; inset: 0; height: 100% !important; width: 100% !important; }
 
-      /* Hide all desktop panels */
-      .finder-panel,
-      .chart-panel,
-      .sidebar { display: none !important; }
+      /* ── Mobile map overlays ─────────────────────────────────────────── */
+      .mob-map-header {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        padding: 10px 16px 8px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .mob-map-header h1 {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1rem; margin: 0; color: var(--text); font-weight: 400;
+      }
+      .mob-map-header h1 span { color: var(--accent); font-style: italic; }
+
+      .mob-topic-bar {
+        position: fixed; top: 45px; left: 0; right: 0; z-index: 10;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+        padding: 6px 14px;
+        display: flex; align-items: center; justify-content: space-between;
+        cursor: pointer; gap: 8px;
+      }
+      .mob-topic-bar-label {
+        font-size: 0.62rem; color: var(--muted);
+        letter-spacing: 0.08em; text-transform: uppercase;
+      }
+      .mob-topic-bar-value {
+        font-size: 0.75rem; color: var(--text); font-weight: 600;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .mob-topic-bar-arrow {
+        font-size: 0.7rem; color: var(--muted); flex-shrink: 0;
+      }
+
+      .mob-legend-strip {
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+        background: var(--panel)cc;
+        backdrop-filter: blur(6px);
+        border-top: 1px solid var(--border);
+        padding: 6px 12px;
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      .mob-legend-title {
+        font-size: 0.52rem; color: var(--muted);
+        letter-spacing: 0.08em; text-transform: uppercase;
+      }
+      .mob-legend-swatches {
+        display: flex; gap: 3px; align-items: stretch;
+      }
+      .mob-legend-swatch {
+        flex: 1; display: flex; flex-direction: column;
+        align-items: center; gap: 2px;
+      }
+      .mob-legend-swatch-color {
+        width: 100%; height: 10px; border-radius: 2px;
+      }
+      .mob-legend-swatch-label {
+        font-size: 0.42rem; color: var(--muted);
+        text-align: center; line-height: 1.1;
+        word-break: break-all;
+      }
+
+      /* Push map content below the fixed bars */
+      #map { padding-top: 0; }
 
       /* ── Mobile overlays ─────────────────────────────────────────────── */
       .mob-overlay {
@@ -176,6 +246,19 @@
         overflow: hidden;
       }
       .mob-overlay.mob-active { display: flex; }
+
+      /* Topic overlay as dropdown from top header */
+      #mob-topic-overlay {
+        top: 81px;
+        bottom: auto;
+        left: 0;
+        right: 0;
+        height: auto;
+        max-height: 80vh;
+        border-radius: 0 0 16px 16px;
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 8px 24px #00000060;
+      }
 
       .mob-overlay-header {
         padding: 16px 18px 12px;
@@ -813,8 +896,17 @@ function getCrimeColourAbs(t){
   if(t<thr[3]) return{fill:'#fb923c42',stroke:'#fb923c'};
   return            {fill:'#ef444455',stroke:'#ef4444'};
 }
-function getSchoolsRateColour(rate){
-  // Ward level — rate-based
+function getSchoolsRateColourWard(rate){
+  // Ward: range 0.17–0.48
+  if(!rate||rate===0) return{fill:'#ffffff11',stroke:'#44444477'};
+  if(rate<0.25) return{fill:'#ef444455',stroke:'#ef4444'};
+  if(rate<0.30) return{fill:'#fb923c42',stroke:'#fb923c'};
+  if(rate<0.36) return{fill:'#facc1538',stroke:'#facc15'};
+  if(rate<0.42) return{fill:'#84cc1630',stroke:'#84cc16'};
+  return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
+}
+function getSchoolsRateColourLsoa(rate){
+  // LSOA: range 0–2.55
   if(!rate||rate===0) return{fill:'#ffffff11',stroke:'#44444477'};
   if(rate<0.4)  return{fill:'#ef444455',stroke:'#ef4444'};
   if(rate<0.6)  return{fill:'#fb923c42',stroke:'#fb923c'};
@@ -822,8 +914,17 @@ function getSchoolsRateColour(rate){
   if(rate<1.2)  return{fill:'#84cc1630',stroke:'#84cc16'};
   return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
 }
-function getSchoolsColour(total){
-  // Absolute count — used for ward abs toggle AND always for LSOA
+function getSchoolsColourWard(total){
+  // Ward: range 3–12
+  if(!total||total===0) return{fill:'#ffffff11',stroke:'#44444477'};
+  if(total<5)   return{fill:'#ef444455',stroke:'#ef4444'};
+  if(total<7)   return{fill:'#fb923c42',stroke:'#fb923c'};
+  if(total<9)   return{fill:'#facc1538',stroke:'#facc15'};
+  if(total<11)  return{fill:'#84cc1630',stroke:'#84cc16'};
+  return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
+}
+function getSchoolsColourLsoa(total){
+  // LSOA: range 0–5
   if(!total||total===0) return{fill:'#ffffff11',stroke:'#44444477'};
   if(total===1) return{fill:'#ef444455',stroke:'#ef4444'};
   if(total===2) return{fill:'#fb923c42',stroke:'#fb923c'};
@@ -831,23 +932,53 @@ function getSchoolsColour(total){
   if(total<=4)  return{fill:'#84cc1630',stroke:'#84cc16'};
   return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
 }
-function getNurseryRateColour(rate){
+function getNurseryRateColourWard(rate){
+  // Ward: range 0.06–0.68, p25=0.17, median=0.21, p75=0.33
   if(!rate||rate===0) return{fill:'#ffffff11',stroke:'#44444477'};
-  if(rate<0.1)  return{fill:'#ef444455',stroke:'#ef4444'};
-  if(rate<0.2)  return{fill:'#fb923c42',stroke:'#fb923c'};
-  if(rate<0.35) return{fill:'#facc1538',stroke:'#facc15'};
-  if(rate<0.5)  return{fill:'#84cc1630',stroke:'#84cc16'};
+  if(rate<0.15) return{fill:'#ef444455',stroke:'#ef4444'};
+  if(rate<0.22) return{fill:'#fb923c42',stroke:'#fb923c'};
+  if(rate<0.30) return{fill:'#facc1538',stroke:'#facc15'};
+  if(rate<0.42) return{fill:'#84cc1630',stroke:'#84cc16'};
   return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
 }
-function getNurseryColour(total){
+function getNurseryRateColourLsoa(rate){
+  // LSOA: range 0–3.46, p75=0.56
+  if(!rate||rate===0) return{fill:'#ffffff11',stroke:'#44444477'};
+  if(rate<0.1)  return{fill:'#ef444455',stroke:'#ef4444'};
+  if(rate<0.3)  return{fill:'#fb923c42',stroke:'#fb923c'};
+  if(rate<0.6)  return{fill:'#facc1538',stroke:'#facc15'};
+  if(rate<1.2)  return{fill:'#84cc1630',stroke:'#84cc16'};
+  return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
+}
+function getNurseryColourWard(total){
+  // Ward: range 1–15
   if(!total||total===0) return{fill:'#ffffff11',stroke:'#44444477'};
   if(total<3)  return{fill:'#ef444455',stroke:'#ef4444'};
   if(total<5)  return{fill:'#fb923c42',stroke:'#fb923c'};
-  if(total<8)  return{fill:'#facc1538',stroke:'#facc15'};
-  if(total<12) return{fill:'#84cc1630',stroke:'#84cc16'};
+  if(total<7)  return{fill:'#facc1538',stroke:'#facc15'};
+  if(total<10) return{fill:'#84cc1630',stroke:'#84cc16'};
   return        {fill:'#2dd4a028',stroke:'#2dd4a0'};
 }
-function getNightRateColour(rate){
+function getNurseryColourLsoa(total){
+  // LSOA: range 0–5
+  if(!total||total===0) return{fill:'#ffffff11',stroke:'#44444477'};
+  if(total===1) return{fill:'#ef444455',stroke:'#ef4444'};
+  if(total===2) return{fill:'#fb923c42',stroke:'#fb923c'};
+  if(total===3) return{fill:'#facc1538',stroke:'#facc15'};
+  if(total<=4)  return{fill:'#84cc1630',stroke:'#84cc16'};
+  return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
+}
+function getNightRateColourWard(rate){
+  // Ward: range 0.15–14.89, p25=0.75, median=1.25, p75=1.95, p90=4.20
+  if(!rate||rate===0) return{fill:'#ffffff11',stroke:'#44444477'};
+  if(rate<0.6)  return{fill:'#ef444455',stroke:'#ef4444'};
+  if(rate<1.2)  return{fill:'#fb923c42',stroke:'#fb923c'};
+  if(rate<2.0)  return{fill:'#facc1538',stroke:'#facc15'};
+  if(rate<4.5)  return{fill:'#84cc1630',stroke:'#84cc16'};
+  return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
+}
+function getNightRateColourLsoa(rate){
+  // LSOA: range 0–33.21, p75=1.71, p90=5.06
   if(!rate||rate===0) return{fill:'#ffffff11',stroke:'#44444477'};
   if(rate<0.5)  return{fill:'#ef444455',stroke:'#ef4444'};
   if(rate<1.5)  return{fill:'#fb923c42',stroke:'#fb923c'};
@@ -855,7 +986,17 @@ function getNightRateColour(rate){
   if(rate<10)   return{fill:'#84cc1630',stroke:'#84cc16'};
   return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
 }
-function getNightColour(total){
+function getNightColourWard(total){
+  // Ward: range 3–320, p25=13, median=24, p75=38
+  if(!total||total===0) return{fill:'#ffffff11',stroke:'#44444477'};
+  if(total<10)  return{fill:'#ef444455',stroke:'#ef4444'};
+  if(total<20)  return{fill:'#fb923c42',stroke:'#fb923c'};
+  if(total<35)  return{fill:'#facc1538',stroke:'#facc15'};
+  if(total<60)  return{fill:'#84cc1630',stroke:'#84cc16'};
+  return         {fill:'#2dd4a028',stroke:'#2dd4a0'};
+}
+function getNightColourLsoa(total){
+  // LSOA: range 0–82, p25=0, median=1, p75=3
   if(!total||total===0) return{fill:'#ffffff11',stroke:'#44444477'};
   if(total<4)   return{fill:'#ef444455',stroke:'#ef4444'};
   if(total<10)  return{fill:'#fb923c42',stroke:'#fb923c'};
@@ -874,27 +1015,34 @@ function getEstateColour(m){
 
 function wardColour(key){
   const d=DATA()[key]; if(!d) return{fill:'#ffffff11',stroke:'#ffffff33'};
-  if(isCrime())  return absMode()?getCrimeColourAbs(d.total):getCrimeColour(d.rate);
-  if(isNight())   return absMode()?getNightColour(d.total):getNightRateColour(d.total/d.population*1000);
-  if(isNursery())  return absMode()?getNurseryColour(d.total):getNurseryRateColour(d.total/d.population*1000);
-  if(isSchools())  return absMode()?getSchoolsColour(d.total):getSchoolsRateColour(d.total/d.population*1000);
+  const lsoa=isLSOA();
+  if(isCrime())    return absMode()?getCrimeColourAbs(d.total):getCrimeColour(d.rate);
+  if(isNight())    return absMode()?(lsoa?getNightColourLsoa(d.total):getNightColourWard(d.total)):(lsoa?getNightRateColourLsoa(d.total/d.population*1000):getNightRateColourWard(d.total/d.population*1000));
+  if(isNursery())  return absMode()?(lsoa?getNurseryColourLsoa(d.total):getNurseryColourWard(d.total)):(lsoa?getNurseryRateColourLsoa(d.total/d.population*1000):getNurseryRateColourWard(d.total/d.population*1000));
+  if(isSchools())  return absMode()?(lsoa?getSchoolsColourLsoa(d.total):getSchoolsColourWard(d.total)):(lsoa?getSchoolsRateColourLsoa(d.total/d.population*1000):getSchoolsRateColourWard(d.total/d.population*1000));
   if(isResidents()){ const grp=currentResidentGroup; const val=d[grp]||0; if(!d.total) return{fill:'#1f233320',stroke:'#1f2333'}; return absMode()?getResidentColourAbs(val,grp):getResidentColourPct(val/d.total*100,grp); }
   return getEstateColour(d.median_price);
 }
 
 // ── Legend ────────────────────────────────────────────────────────────────────
+const GREY_ZERO = {col:'#444444',label:'0 (none)'};
 const LEGENDS={
-  crime_rate: [{col:'#2dd4a0',label:'< 60'},{col:'#84cc16',label:'60–100'},{col:'#facc15',label:'100–150'},{col:'#fb923c',label:'150–220'},{col:'#ef4444',label:'> 220'}],
-  crime_abs_w:[{col:'#2dd4a0',label:'< 500'},{col:'#84cc16',label:'500–1,499'},{col:'#facc15',label:'1,500–2,499'},{col:'#fb923c',label:'2,500–3,999'},{col:'#ef4444',label:'≥ 4,000'}],
-  crime_abs_l:[{col:'#2dd4a0',label:'< 50'},{col:'#84cc16',label:'50–99'},{col:'#facc15',label:'100–174'},{col:'#fb923c',label:'175–299'},{col:'#ef4444',label:'≥ 300'}],
-  estate:     [{col:'#2dd4a0',label:'< £150k'},{col:'#84cc16',label:'£150–220k'},{col:'#facc15',label:'£220–320k'},{col:'#fb923c',label:'£320–450k'},{col:'#ef4444',label:'> £450k'}],
-  estate_evo: [{col:'#ef4444',label:'< −15%'},{col:'#fb923c',label:'−15 to −5%'},{col:'#facc15',label:'−5 to +5%'},{col:'#84cc16',label:'+5 to +15%'},{col:'#2dd4a0',label:'> +15%'}],
-  night_abs:  [{col:'#2dd4a0',label:'≥ 60'},{col:'#84cc16',label:'25–59'},{col:'#facc15',label:'10–24'},{col:'#fb923c',label:'4–9'},{col:'#ef4444',label:'< 4'}],
-  night_rate:   [{col:'#2dd4a0',label:'> 10'},{col:'#84cc16',label:'4–10'},{col:'#facc15',label:'1.5–4'},{col:'#fb923c',label:'0.5–1.5'},{col:'#ef4444',label:'< 0.5'}],
-  nursery_abs:  [{col:'#2dd4a0',label:'≥ 12'},{col:'#84cc16',label:'8–11'},{col:'#facc15',label:'5–7'},{col:'#fb923c',label:'3–4'},{col:'#ef4444',label:'< 3'}],
-  nursery_rate: [{col:'#2dd4a0',label:'≥ 0.5'},{col:'#84cc16',label:'0.35–0.5'},{col:'#facc15',label:'0.2–0.35'},{col:'#fb923c',label:'0.1–0.2'},{col:'#ef4444',label:'< 0.1'}],
-  schools_abs:  [{col:'#2dd4a0',label:'≥ 5'},{col:'#84cc16',label:'4'},{col:'#facc15',label:'3'},{col:'#fb923c',label:'2'},{col:'#ef4444',label:'1'}],
-  schools_rate: [{col:'#2dd4a0',label:'≥ 1.2'},{col:'#84cc16',label:'0.8–1.2'},{col:'#facc15',label:'0.6–0.8'},{col:'#fb923c',label:'0.4–0.6'},{col:'#ef4444',label:'< 0.4'}],
+  crime_rate:    [{col:'#2dd4a0',label:'< 60'},{col:'#84cc16',label:'60–100'},{col:'#facc15',label:'100–150'},{col:'#fb923c',label:'150–220'},{col:'#ef4444',label:'> 220'}],
+  crime_abs_w:   [{col:'#2dd4a0',label:'< 500'},{col:'#84cc16',label:'500–1,499'},{col:'#facc15',label:'1,500–2,499'},{col:'#fb923c',label:'2,500–3,999'},{col:'#ef4444',label:'≥ 4,000'}],
+  crime_abs_l:   [{col:'#2dd4a0',label:'< 50'},{col:'#84cc16',label:'50–99'},{col:'#facc15',label:'100–174'},{col:'#fb923c',label:'175–299'},{col:'#ef4444',label:'≥ 300'}],
+  estate:        [{col:'#2dd4a0',label:'< £150k'},{col:'#84cc16',label:'£150–220k'},{col:'#facc15',label:'£220–320k'},{col:'#fb923c',label:'£320–450k'},{col:'#ef4444',label:'> £450k'}],
+  night_abs_w:    [{col:'#2dd4a0',label:'≥ 60'},{col:'#84cc16',label:'35–59'},{col:'#facc15',label:'20–34'},{col:'#fb923c',label:'10–19'},{col:'#ef4444',label:'1–9'},GREY_ZERO],
+  night_abs_l:    [{col:'#2dd4a0',label:'≥ 60'},{col:'#84cc16',label:'25–59'},{col:'#facc15',label:'10–24'},{col:'#fb923c',label:'4–9'},{col:'#ef4444',label:'1–3'},GREY_ZERO],
+  night_rate_w:   [{col:'#2dd4a0',label:'≥ 4.5'},{col:'#84cc16',label:'2.0–4.5'},{col:'#facc15',label:'1.2–2.0'},{col:'#fb923c',label:'0.6–1.2'},{col:'#ef4444',label:'< 0.6'},GREY_ZERO],
+  night_rate_l:   [{col:'#2dd4a0',label:'> 10'},{col:'#84cc16',label:'4–10'},{col:'#facc15',label:'1.5–4'},{col:'#fb923c',label:'0.5–1.5'},{col:'#ef4444',label:'< 0.5'},GREY_ZERO],
+  nursery_abs_w:  [{col:'#2dd4a0',label:'≥ 10'},{col:'#84cc16',label:'7–9'},{col:'#facc15',label:'5–6'},{col:'#fb923c',label:'3–4'},{col:'#ef4444',label:'1–2'},GREY_ZERO],
+  nursery_abs_l:  [{col:'#2dd4a0',label:'≥ 5'},{col:'#84cc16',label:'4'},{col:'#facc15',label:'3'},{col:'#fb923c',label:'2'},{col:'#ef4444',label:'1'},GREY_ZERO],
+  nursery_rate_w: [{col:'#2dd4a0',label:'≥ 0.42'},{col:'#84cc16',label:'0.30–0.42'},{col:'#facc15',label:'0.22–0.30'},{col:'#fb923c',label:'0.15–0.22'},{col:'#ef4444',label:'< 0.15'},GREY_ZERO],
+  nursery_rate_l: [{col:'#2dd4a0',label:'≥ 1.2'},{col:'#84cc16',label:'0.6–1.2'},{col:'#facc15',label:'0.3–0.6'},{col:'#fb923c',label:'0.1–0.3'},{col:'#ef4444',label:'< 0.1'},GREY_ZERO],
+  schools_abs_w:  [{col:'#2dd4a0',label:'≥ 11'},{col:'#84cc16',label:'9–10'},{col:'#facc15',label:'7–8'},{col:'#fb923c',label:'5–6'},{col:'#ef4444',label:'1–4'},GREY_ZERO],
+  schools_abs_l:  [{col:'#2dd4a0',label:'≥ 5'},{col:'#84cc16',label:'4'},{col:'#facc15',label:'3'},{col:'#fb923c',label:'2'},{col:'#ef4444',label:'1'},GREY_ZERO],
+  schools_rate_w: [{col:'#2dd4a0',label:'≥ 0.42'},{col:'#84cc16',label:'0.36–0.42'},{col:'#facc15',label:'0.30–0.36'},{col:'#fb923c',label:'0.25–0.30'},{col:'#ef4444',label:'< 0.25'},GREY_ZERO],
+  schools_rate_l: [{col:'#2dd4a0',label:'≥ 1.2'},{col:'#84cc16',label:'0.8–1.2'},{col:'#facc15',label:'0.6–0.8'},{col:'#fb923c',label:'0.4–0.6'},{col:'#ef4444',label:'< 0.4'},GREY_ZERO],
 };
 function updateLegend(){
   let key, title;
@@ -902,10 +1050,10 @@ function updateLegend(){
     key   = absMode() ? (isLSOA()?'crime_abs_l':'crime_abs_w') : 'crime_rate';
     title = absMode() ? 'Total incidents · Last 12 months' : 'Crimes per 1,000 residents · Last 12 months';
   } else if(isNight()){
-    key   = absMode() ? 'night_abs' : 'night_rate';
+    key   = absMode() ? (isLSOA()?'night_abs_l':'night_abs_w') : (isLSOA()?'night_rate_l':'night_rate_w');
     title = absMode() ? 'Total businesses' : 'Businesses per 1,000 residents';
   } else if(isNursery()){
-    key   = absMode() ? 'nursery_abs' : 'nursery_rate';
+    key   = absMode() ? (isLSOA()?'nursery_abs_l':'nursery_abs_w') : (isLSOA()?'nursery_rate_l':'nursery_rate_w');
     title = absMode() ? 'Total childcare providers' : 'Childcare providers per 1,000 residents';
   } else if(isResidents()){
     const grp=currentResidentGroup;
@@ -926,7 +1074,7 @@ function updateLegend(){
       {col:gc[8],label:'> '+t[7]+'%'},
     ];
   } else if(isSchools()){
-    key   = absMode() ? 'schools_abs' : 'schools_rate';
+    key   = absMode() ? (isLSOA()?'schools_abs_l':'schools_abs_w') : (isLSOA()?'schools_rate_l':'schools_rate_w');
     title = absMode() ? 'Total schools' : 'Schools per 1,000 residents';
   } else {
     key   = 'estate';
@@ -935,6 +1083,13 @@ function updateLegend(){
   document.getElementById('legend-title').textContent=title;
   document.getElementById('legend-scale').innerHTML=LEGENDS[key].map(({col,label})=>
     `<div class="legend-item"><div class="legend-swatch" style="background:${col}44;border:1px solid ${col}"></div>${label}</div>`
+  ).join('');
+  // Update mobile legend strip
+  const mobLegTitle=document.getElementById('mob-legend-title');
+  const mobLegSwatches=document.getElementById('mob-legend-swatches');
+  if(mobLegTitle) mobLegTitle.textContent=title;
+  if(mobLegSwatches) mobLegSwatches.innerHTML=LEGENDS[key].map(({col,label})=>
+    `<div class="mob-legend-swatch"><div class="mob-legend-swatch-color" style="background:${col}44;border:1px solid ${col}"></div><div class="mob-legend-swatch-label">${label}</div></div>`
   ).join('');
   document.getElementById('abs-toggle-row').style.display=(isCrime()||isNight()||isNursery()||isSchools()||isResidents())?'':'none';
   document.getElementById('rooms-toggle-row').style.display=(!isCrime()&&!isNight()&&!isNursery()&&!isSchools()&&!isResidents())?'':'none';
@@ -1004,7 +1159,7 @@ function renderSidebar(key){
 
 function renderNurserySidebar(key){
   const d=DATA()[key]; if(!d) return;
-  const col=absMode()?getNurseryColour(d.total):getNurseryRateColour(d.total/d.population*1000);
+  const col=absMode()?(isLSOA()?getNurseryColourLsoa(d.total):getNurseryColourWard(d.total)):(isLSOA()?getNurseryRateColourLsoa(d.total/d.population*1000):getNurseryRateColourWard(d.total/d.population*1000));
   const maxCount=Math.max(1,...Object.values(d.counts));
   const RATING_ORDER=['Outstanding','Good','Requires Improvement','Inadequate','Not yet inspected'];
   const bars=RATING_ORDER.map(rating=>{
@@ -1045,7 +1200,7 @@ const NIGHT_TYPE_COLORS={'Pub':'#60a5fa','Bar':'#a78bfa','Nightclub':'#f87171','
 
 function renderNightSidebar(key){
   const d=DATA()[key]; if(!d) return;
-  const col=getNightColour(d.total);
+  const col=isLSOA()?getNightColourLsoa(d.total):getNightColourWard(d.total);
   const header=isLSOA()?`<h2>${d.name||key}</h2><div class="sidebar-sub">${d.ward}</div>`:`<h2>${key}</h2>`;
   // Sort by count descending
   const sorted=[...NIGHT_TYPES].sort((a,b)=>(d.counts[b]||0)-(d.counts[a]||0));
@@ -1251,7 +1406,17 @@ document.getElementById('abs-toggle').addEventListener('change',()=>{refreshMap(
 document.getElementById('rooms-toggle').addEventListener('change',()=>{if(lockedKey)renderSidebar(lockedKey);});
 
 let lockedLayer=null,lockedKey=null,geoLayer=null;
-function styleDefault(layer,key){const col=wardColour(key);layer.setStyle({fillColor:col.fill,fillOpacity:1,color:col.stroke,weight:isLSOA()?0.6:1.2,opacity:0.8});}
+function styleDefault(layer,key){
+  const finderOpen=!document.getElementById('finder-panel').classList.contains('hidden')
+    ||document.getElementById('mob-finder-overlay').classList.contains('mob-active');
+  const isFinderResult=finderOpen&&finderResults.some(r=>r.key===key);
+  if(isFinderResult){
+    layer.setStyle({fillColor:'#1d4ed855',fillOpacity:1,color:'#60a5fa',weight:isLSOA()?2.5:3,opacity:1});
+  } else {
+    const col=wardColour(key);
+    layer.setStyle({fillColor:col.fill,fillOpacity:1,color:col.stroke,weight:isLSOA()?0.6:1.2,opacity:0.8});
+  }
+}
 function styleActive(layer){
   // More obvious selection: thicker border, accent colour stroke, high opacity
   const col=wardColour(areaKey(layer.feature));
@@ -1300,12 +1465,20 @@ function buildGeoLayer(geojson){
           if(geoLayer) geoLayer.eachLayer(l=>{if(l.closeTooltip) l.closeTooltip();});
           if(lockedLayer)styleDefault(lockedLayer,lockedKey);
           lockedLayer=this;lockedKey=key;styleActive(this);this.closeTooltip();renderSidebar(key);rebuildChartIfOpen();
+          // If finder is active (panel open on desktop, or results still live on mobile), show area summary
+          const finderOpen=finderResults.length>0
+            ||!document.getElementById('finder-panel').classList.contains('hidden');
+          if(finderOpen) openSummary(key);
         }
       });
     }
   }).addTo(map);
 }
-map.on('click',()=>{if(lockedLayer){styleDefault(lockedLayer,lockedKey);lockedLayer=null;lockedKey=null;rebuildChartIfOpen();}});
+map.on('click',()=>{
+  // Don't clear locked layer if finder results are active (would break mobile tap-to-summary)
+  if(finderResults.length>0) return;
+  if(lockedLayer){styleDefault(lockedLayer,lockedKey);lockedLayer=null;lockedKey=null;rebuildChartIfOpen();}
+});
 
 // ── Selectors ─────────────────────────────────────────────────────────────────
 const BADGE={
@@ -1322,9 +1495,17 @@ const BADGE={
   schools_ward:'GIAS / Ofsted · 2024–2025',
   schools_lsoa:'GIAS / Ofsted · 2024–2025',
 };
+function updateMobTopicBar(){
+  const el=document.getElementById('mob-topic-bar-value');
+  if(!el) return;
+  const topicNames={crime:'Crime',night:'Nightlife',nursery:'Childcare',schools:'Schools',residents:'Residents',estate:'Real Estate'};
+  const areaLabel=currentArea==='lsoa'?'LSOAs':'Wards';
+  el.textContent=(topicNames[currentMode]||currentMode)+' · '+areaLabel;
+}
 function onSelectChange(){
   document.getElementById('sidebar-content').innerHTML='<div class="placeholder-text"><strong>Hover or click an area</strong>Hover to preview. Click to lock. Click again to unlock.<br/><br/>All figures are real — no estimates or fabricated data.</div>';
   document.getElementById('header-badge').textContent=BADGE[currentMode+'_'+currentArea];
+  updateMobTopicBar();
   buildCatSelect();buildGeoLayer(isLSOA()?LSOA_GEO:WARD_GEO);updateLegend();rebuildChartIfOpen();updateMarkers();updateSchoolMarkers();updateNurseryMarkers();
 }
 document.getElementById('mode-select').addEventListener('change',function(){currentMode=this.value;onSelectChange();});
@@ -1396,7 +1577,7 @@ function renderResidentsSidebar(key){
 
 function renderSchoolsSidebar(key){
   const d=DATA()[key]; if(!d) return;
-  const col=absMode()?getSchoolsColour(d.total):getSchoolsRateColour(d.total/d.population*1000);
+  const col=absMode()?(isLSOA()?getSchoolsColourLsoa(d.total):getSchoolsColourWard(d.total)):(isLSOA()?getSchoolsRateColourLsoa(d.total/d.population*1000):getSchoolsRateColourWard(d.total/d.population*1000));
   const PHASE_ORDER=['Primary','Secondary','16+','All-through','Nursery','Other'];
   const RATING_ORDER=['Outstanding','Good','Requires Improvement','Inadequate','Not yet inspected'];
   // max count for bar scaling
@@ -1721,7 +1902,15 @@ let finderActiveKey=null;
 function toggleFinderPanel(){
   const p=document.getElementById('finder-panel');
   p.classList.toggle('hidden');
-  if(!p.classList.contains('hidden') && finderResults.length===0) runFinder();
+  if(!p.classList.contains('hidden')){
+    if(finderResults.length>0) highlightFinderAreas();
+    // Don't auto-run — wait for user to click "Find Best Areas"
+  } else {
+    // Panel closed — clear blue highlights and reset state
+    finderResults=[];
+    finderActiveKey=null;
+    refreshMap();
+  }
 }
 
 function finderNorm(vals){
@@ -1902,7 +2091,8 @@ function renderFinderResults(){
     return;
   }
   const topScore=finderResults[0].score;
-  let html='<div class="finder-results-title">Top 10 areas for you</div>';
+  const seeOnMapBtn=isMobile()?`<button onclick="mobCloseFinderToMap()" style="display:block;width:100%;margin-bottom:10px;background:var(--accent);color:#1a1f2e;border:none;border-radius:6px;padding:8px;font-size:0.7rem;font-weight:600;cursor:pointer">🗺 See results on map</button>`:'';
+  let html=seeOnMapBtn+'<div class="finder-results-title">Top 10 areas for you</div>';
   finderResults.forEach((r,i)=>{
     const d=(isLSOA()?LSOA_ESTATE:WARD_ESTATE)[r.key];
     const lsoaD=isLSOA()?LSOA_RESIDENTS[r.key]:null;
@@ -1943,7 +2133,20 @@ function finderSelectArea(key){
   }
   highlightFinderAreas();
   // Open summary panel
-  openSummary(key);
+  try {
+    openSummary(key, 'finder');
+  } catch(e) {
+    console.error('openSummary error:', e);
+    // Fallback: just open the mob summary overlay with basic info
+    if(isMobile && isMobile()) {
+      const mobTitle = document.getElementById('mob-summary-title');
+      const mobBody = document.getElementById('mob-summary-body');
+      const mobOverlay = document.getElementById('mob-summary-overlay');
+      if(mobTitle) mobTitle.textContent = key;
+      if(mobBody) mobBody.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:0.7rem">Could not load summary.</div>';
+      if(mobOverlay) { document.querySelectorAll('.mob-overlay').forEach(o=>o.classList.remove('mob-active')); mobOverlay.classList.add('mob-active'); }
+    }
+  }
 }
 
 function highlightFinderAreas(){
@@ -1966,9 +2169,20 @@ const _origOnSelectChange=onSelectChange;
 const _origRefreshMap=refreshMap;
 
 buildCatSelect();
+updateMobTopicBar();
 
 // ── Area Summary ──────────────────────────────────────────────────────────────
-function openSummary(key) {
+let summarySource = 'map'; // 'map' or 'finder'
+function mobSummaryBack(){
+  document.getElementById('mob-summary-overlay').classList.remove('mob-active');
+  if(summarySource==='finder'){
+    // Go back to finder overlay with results still intact
+    document.getElementById('mob-finder-overlay').classList.add('mob-active');
+  }
+  // If source is 'map', just close — map is already visible behind
+}
+function openSummary(key, source) {
+  summarySource = source || 'map';
   const panel = document.getElementById('summary-panel');
   const body = document.getElementById('summary-body');
   const title = document.getElementById('summary-title');
@@ -2084,7 +2298,7 @@ function openSummary(key) {
   const dn = (isLSOA() ? LSOA_NIGHT : WARD_NIGHT)[key];
   if (dn) {
     const rate = dn.total / dn.population * 1000;
-    const col = getNightRateColour(rate).stroke;
+    const col = (isLSOA()?getNightRateColourLsoa(rate):getNightRateColourWard(rate)).stroke;
     const sorted = [...NIGHT_TYPES].sort((a,b) => (dn.counts[b]||0)-(dn.counts[a]||0));
     const maxN = Math.max(1, dn.total);
     const bars = sorted.map(type => {
@@ -2106,7 +2320,7 @@ function openSummary(key) {
   const dnu = (isLSOA() ? LSOA_NURSERY : WARD_NURSERY)[key];
   if (dnu) {
     const rate = dnu.total / dnu.population * 1000;
-    const col = getNurseryRateColour(rate).stroke;
+    const col = (isLSOA()?getNurseryRateColourLsoa(rate):getNurseryRateColourWard(rate)).stroke;
     const RATING_ORDER = ['Outstanding','Good','Requires Improvement','Inadequate','Not yet inspected'];
     const maxR = Math.max(1, ...RATING_ORDER.map(r => dnu.counts[r]||0));
     const bars = RATING_ORDER.map(r => {
@@ -2128,7 +2342,7 @@ function openSummary(key) {
   const ds = (isLSOA() ? LSOA_SCHOOLS : WARD_SCHOOLS)[key];
   if (ds) {
     const rate = ds.total / ds.population * 1000;
-    const col = getSchoolsRateColour(rate).stroke;
+    const col = (isLSOA()?getSchoolsRateColourLsoa(rate):getSchoolsRateColourWard(rate)).stroke;
     const PHASE_ORDER = ['Primary','Secondary','16+','All-through','Nursery','Other'];
     const RATING_ORDER = ['Outstanding','Good','Requires Improvement','Inadequate','Not yet inspected'];
     const maxS = Math.max(1, ...PHASE_ORDER.map(p => ds.phases[p]||0));
@@ -2182,13 +2396,16 @@ function openSummary(key) {
 
   body.innerHTML = html2;
 
-  // Also populate mobile summary overlay
-  if (typeof isMobile === 'function' && isMobile()) {
-    const mobTitle = document.getElementById('mob-summary-title');
-    const mobBody = document.getElementById('mob-summary-body');
-    if (mobTitle) mobTitle.textContent = areaName;
-    if (mobBody) mobBody.innerHTML = html2;
-    mobOpen('mob-summary-overlay', null);
+  // Also populate mobile summary overlay — open it directly without isMobile() gate
+  // so it works even if viewport width check misfires on some devices
+  const mobTitle = document.getElementById('mob-summary-title');
+  const mobBody = document.getElementById('mob-summary-body');
+  const mobSummaryOverlay = document.getElementById('mob-summary-overlay');
+  if (mobTitle) mobTitle.textContent = areaName;
+  if (mobBody) mobBody.innerHTML = html2;
+  if (mobSummaryOverlay && isMobile()) {
+    document.querySelectorAll('.mob-overlay').forEach(o => o.classList.remove('mob-active'));
+    mobSummaryOverlay.classList.add('mob-active');
   }
 }
 
@@ -2233,8 +2450,62 @@ function mobToggleMenu() {
   }
 }
 
+function mobCloseFinderToMap(){
+  document.getElementById('mob-finder-overlay').classList.remove('mob-active');
+  // Don't clear finderResults — keep blue zones highlighted
+  highlightFinderAreas();
+  // Force Leaflet to re-acquire touch events after overlay interaction
+  map.invalidateSize();
+  setTimeout(()=>{
+    map.invalidateSize();
+    if(map.tap) map.tap.enable();
+  },150);
+}
+
+// Direct touchend handler for mobile finder mode — bypasses Leaflet tap issues
+// after overlay closes
+document.getElementById('map').addEventListener('touchend', function(e){
+  // Only active when finder results are live and we're on mobile
+  if(!isMobile() || finderResults.length===0) return;
+  // If an overlay is open, do nothing
+  if(document.querySelector('.mob-overlay.mob-active')) return;
+  const touch = e.changedTouches[0];
+  if(!touch) return;
+  const containerPoint = map.mouseEventToContainerPoint(touch);
+  const latLng = map.containerPointToLatLng(containerPoint);
+  // Find which layer contains this point
+  if(!geoLayer) return;
+  let hit = null;
+  geoLayer.eachLayer(layer=>{
+    if(hit || !layer.feature) return;
+    if(!layer.getBounds || !layer.getBounds().contains(latLng)) return;
+    // Use Leaflet's _containsPoint for precise polygon hit test
+    const containerPt = map.latLngToContainerPoint(latLng);
+    if(layer._containsPoint && layer._containsPoint(containerPt)){
+      hit = layer;
+    } else if(!layer._containsPoint) {
+      // fallback to bounds
+      hit = layer;
+    }
+  });
+  if(!hit) return;
+  const key = areaKey(hit.feature);
+  e.preventDefault();
+  e.stopPropagation();
+  if(lockedLayer && lockedLayer !== hit) styleDefault(lockedLayer, lockedKey);
+  lockedLayer = hit; lockedKey = key;
+  styleActive(hit);
+  renderSidebar(key);
+  openSummary(key);
+}, {passive: false});
+
 function mobClose(overlayId) {
   document.getElementById(overlayId).classList.remove('mob-active');
+  if(overlayId==='mob-finder-overlay'){
+    finderResults=[];
+    finderActiveKey=null;
+    refreshMap();
+  }
   setTimeout(() => map.invalidateSize(), 100);
 }
 
@@ -2428,11 +2699,11 @@ if (window.innerWidth <= 768) {
 
 <!-- Topic overlay -->
 <div class="mob-overlay" id="mob-topic-overlay">
-  <div class="mob-overlay-header">
+  <div class="mob-overlay-header" style="display:none;">
     <button class="mob-back" onclick="mobClose('mob-topic-overlay')">←</button>
     <span class="mob-overlay-title">Topic &amp; Area</span>
   </div>
-  <div class="mob-overlay-body">
+  <div class="mob-overlay-body" style="overflow-y:auto;">
     <div class="mob-topic-row">
       <div class="mob-topic-label">Topic</div>
       <select class="mob-topic-select" id="mob-mode-select">
@@ -2514,7 +2785,7 @@ if (window.innerWidth <= 768) {
 <!-- Summary overlay (mobile) -->
 <div class="mob-overlay" id="mob-summary-overlay">
   <div class="mob-overlay-header">
-    <button class="mob-back" onclick="mobClose('mob-summary-overlay')">←</button>
+    <button class="mob-back" onclick="mobSummaryBack()">←</button>
     <div>
       <div style="font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px">Area Summary</div>
       <span class="mob-overlay-title" id="mob-summary-title">—</span>
@@ -2537,13 +2808,28 @@ if (window.innerWidth <= 768) {
 </div>
 
 <!-- Bottom nav bar -->
-<div class="mob-menu-wrap" id="mob-menu-wrap">
-  <button class="mob-menu-toggle" id="mob-menu-toggle" onclick="mobToggleMenu()">≡ Menu</button>
-  <div class="mob-menu-items" id="mob-menu-items">
-    <button class="mob-menu-item" onclick="mobMenuOpen('mob-topic-overlay')">Topic &amp; Area</button>
-    <button class="mob-menu-item" onclick="mobMenuOpen('mob-stats-overlay')">Aggregated Stats</button>
-    <button class="mob-menu-item" onclick="mobMenuOpen('mob-finder-overlay')">Find the area you need!</button>
+<div id="mob-fab-wrap" style="position:fixed;bottom:70px;right:16px;z-index:300;display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+  <button onclick="mobMenuOpen('mob-finder-overlay')" style="background:var(--bg);color:var(--accent);border:2px solid var(--accent);border-radius:20px;padding:10px 16px;font-family:'DM Mono',monospace;font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;box-shadow:0 2px 12px #00000060;-webkit-tap-highlight-color:transparent;letter-spacing:0.03em;">🔍 Find YOUR area!</button>
+  <button onclick="mobMenuOpen('mob-stats-overlay')" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:20px;padding:10px 16px;font-family:'DM Mono',monospace;font-size:0.72rem;cursor:pointer;white-space:nowrap;box-shadow:0 2px 12px #00000060;-webkit-tap-highlight-color:transparent;letter-spacing:0.03em;">📊 Stats by Area</button>
+</div>
+<!-- Mobile map header -->
+<div class="mob-map-header" id="mob-map-header">
+  <h1>Where to Live in <span>Sheffield?</span></h1>
+</div>
+
+<!-- Mobile topic bar -->
+<div class="mob-topic-bar" id="mob-topic-bar" onclick="document.getElementById('mob-topic-overlay').classList.contains('mob-active')?mobClose('mob-topic-overlay'):mobMenuOpen('mob-topic-overlay')">
+  <div>
+    <div class="mob-topic-bar-label">Currently viewing</div>
+    <div class="mob-topic-bar-value" id="mob-topic-bar-value">Crime · Wards</div>
   </div>
+  <div class="mob-topic-bar-arrow">▾ change</div>
+</div>
+
+<!-- Mobile legend strip -->
+<div class="mob-legend-strip" id="mob-legend-strip">
+  <div class="mob-legend-title" id="mob-legend-title"></div>
+  <div class="mob-legend-swatches" id="mob-legend-swatches"></div>
 </div>
 
 </body>
